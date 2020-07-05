@@ -3,10 +3,7 @@ package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef
 import com.firsttimeinforever.intellij.pdf.viewer.settings.PdfViewerSettings
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.StaticServer
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.PdfFileEditorPanel
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.MessageEventReceiver
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.MessageEventSender
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.SubscribableEventType
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.TriggerableEventType
+import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.*
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.objects.*
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
@@ -26,8 +23,6 @@ import com.intellij.openapi.vfs.VirtualFileEvent
 import com.intellij.openapi.vfs.VirtualFileListener
 import com.intellij.ui.jcef.JCEFHtmlPanel
 import com.intellij.util.ui.UIUtil
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonDecodingException
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
@@ -42,12 +37,9 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
 {
     private val browserPanel = JCEFHtmlPanel("about:blank")
     private val logger = logger<PdfFileEditorJcefPanel>()
-    private val jsonSerializer = Json(JsonConfiguration.Stable.copy(ignoreUnknownKeys = true))
-    private val eventReceiver =
-        MessageEventReceiver.fromList(browserPanel, SubscribableEventType.values().asList())
-    private val eventSender = MessageEventSender(browserPanel, jsonSerializer)
+    private val messagePassingInterface = MessagePassingInterface(browserPanel)
     val presentationModeController =
-        PresentationModeController(this, browserPanel.component, eventReceiver, eventSender)
+        PresentationModeController(this, browserPanel.component, messagePassingInterface)
     private var currentPageNumberHolder: Int = 1
     private val controlPanel = ControlPanel()
     private var currentScrollDirectionHorizontal = true
@@ -116,29 +108,26 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
 
     init {
         Disposer.register(this, browserPanel)
-        Disposer.register(this, eventReceiver)
+        Disposer.register(this, messagePassingInterface)
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(controlPanel)
         add(browserPanel.component)
-        eventReceiver.run {
-            addHandler(SubscribableEventType.PAGE_CHANGED) {
-                val result = jsonSerializer.parse(PageChangeDataObject.serializer(), it)
-                currentPageNumberHolder = result.pageNumber
+        messagePassingInterface.run {
+            subscribe<PageChangeDataObject>(SubscribableEventType.PAGE_CHANGED) {
+                currentPageNumberHolder = it.pageNumber
                 pageStateChanged()
             }
-            addHandler(SubscribableEventType.DOCUMENT_INFO) {
-                val result = jsonSerializer.parse(DocumentInfoDataObject.serializer(), it)
+            subscribe<DocumentInfoDataObject>(SubscribableEventType.DOCUMENT_INFO) {
                 ApplicationManager.getApplication().invokeLater {
-                    showDocumentInfoDialog(result)
+                    showDocumentInfoDialog(it)
                 }
             }
-            addHandler(SubscribableEventType.FRAME_FOCUSED) {
+            subscribe(SubscribableEventType.FRAME_FOCUSED) {
                 grabFocus()
             }
-            addHandler(SubscribableEventType.PAGES_COUNT) {
+            subscribe<PagesCountDataObject>(SubscribableEventType.PAGES_COUNT) {
                 try {
-                    val result = jsonSerializer.parse(PagesCountDataObject.serializer(), it)
-                    pagesCountHolder = result.count
+                    pagesCountHolder = it.count
                     pageStateChanged()
                 }
                 catch (exception: JsonDecodingException) {
@@ -148,7 +137,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                     )
                 }
             }
-            addHandler(SubscribableEventType.DOCUMENT_LOAD_ERROR) {
+            subscribePlain(SubscribableEventType.DOCUMENT_LOAD_ERROR) {
                 // For some reason this event triggers with no data
                 // This should be impossible, due to passing event data
                 // to triggerEvent() in unhandledrejection event handler
@@ -158,17 +147,11 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                     showDocumentLoadErrorNotification()
                 }
             }
-            addHandler(SubscribableEventType.SIDEBAR_VIEW_STATE_CHANGED) {
-                val result = jsonSerializer.parse(
-                    SidebarViewStateChangeDataObject.serializer(), it
-                )
-                sidebarViewStateHolder = result.state
+            subscribe<SidebarViewStateChangeDataObject>(SubscribableEventType.SIDEBAR_VIEW_STATE_CHANGED) {
+                sidebarViewStateHolder = it.state
             }
-            addHandler(SubscribableEventType.SIDEBAR_AVAILABLE_VIEWS_CHANGED) {
-                val result = jsonSerializer.parse(
-                    SidebarAvailableViewModesChangedDataObject.serializer(), it
-                )
-                sidebarAvailableViewModesHolder = result
+            subscribe<SidebarAvailableViewModesChangedDataObject>(SubscribableEventType.SIDEBAR_AVAILABLE_VIEWS_CHANGED) {
+                sidebarAvailableViewModesHolder = it
             }
         }
         addKeyListener(pageNavigationKeyListener)
@@ -200,10 +183,9 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
 
     fun setSidebarViewMode(mode: SidebarViewMode) {
         sidebarViewStateHolder = SidebarViewState(mode, sidebarViewStateHolder.hidden)
-        eventSender.triggerWith(
+        messagePassingInterface.triggerEvent(
             TriggerableEventType.SET_SIDEBAR_VIEW_MODE,
-            SidebarViewModeChangeDataObject.from(mode),
-            SidebarViewModeChangeDataObject.serializer()
+            SidebarViewModeChangeDataObject.from(mode)
         )
     }
 
@@ -215,23 +197,22 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         }
 
     private fun updatePageNumber(value: Int) {
-        eventSender.triggerWith(
+        messagePassingInterface.triggerEvent(
             TriggerableEventType.SET_PAGE,
-            PageChangeDataObject(value),
-            PageChangeDataObject.serializer()
+            PageChangeDataObject(value)
         )
     }
 
-    override fun increaseScale() = eventSender.trigger(TriggerableEventType.INCREASE_SCALE)
-    override fun decreaseScale() = eventSender.trigger(TriggerableEventType.DECREASE_SCALE)
-    override fun nextPage() = eventSender.trigger(TriggerableEventType.GOTO_NEXT_PAGE)
-    override fun previousPage() = eventSender.trigger(TriggerableEventType.GOTO_PREVIOUS_PAGE)
+    override fun increaseScale() = messagePassingInterface.triggerEvent(TriggerableEventType.INCREASE_SCALE)
+    override fun decreaseScale() = messagePassingInterface.triggerEvent(TriggerableEventType.DECREASE_SCALE)
+    override fun nextPage() = messagePassingInterface.triggerEvent(TriggerableEventType.GOTO_NEXT_PAGE)
+    override fun previousPage() = messagePassingInterface.triggerEvent(TriggerableEventType.GOTO_PREVIOUS_PAGE)
 
-    fun getDocumentInfo() = eventSender.trigger(TriggerableEventType.GET_DOCUMENT_INFO)
-    fun toggleSidebar() = eventSender.trigger(TriggerableEventType.TOGGLE_SIDEBAR)
-    fun printDocument() = eventSender.trigger(TriggerableEventType.PRINT_DOCUMENT)
-    fun rotateClockwise() = eventSender.trigger(TriggerableEventType.ROTATE_CLOCKWISE)
-    fun rotateCounterclockwise() = eventSender.trigger(TriggerableEventType.ROTATE_COUNTERCLOCKWISE)
+    fun getDocumentInfo() = messagePassingInterface.triggerEvent(TriggerableEventType.GET_DOCUMENT_INFO)
+    fun toggleSidebar() = messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_SIDEBAR)
+    fun printDocument() = messagePassingInterface.triggerEvent(TriggerableEventType.PRINT_DOCUMENT)
+    fun rotateClockwise() = messagePassingInterface.triggerEvent(TriggerableEventType.ROTATE_CLOCKWISE)
+    fun rotateCounterclockwise() = messagePassingInterface.triggerEvent(TriggerableEventType.ROTATE_COUNTERCLOCKWISE)
 
     var pageSpreadState
         get() = pageSpreadStateHolder
@@ -240,7 +221,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                 return
             }
             pageSpreadStateHolder = state
-            eventSender.trigger(when (state) {
+            messagePassingInterface.triggerEvent(when (state) {
                 PageSpreadState.NONE -> TriggerableEventType.SPREAD_NONE
                 PageSpreadState.EVEN -> TriggerableEventType.SPREAD_EVEN_PAGES
                 PageSpreadState.ODD -> TriggerableEventType.SPREAD_ODD_PAGES
@@ -248,7 +229,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         }
 
     fun toggleScrollDirection(): Boolean {
-        eventSender.trigger(TriggerableEventType.TOGGLE_SCROLL_DIRECTION)
+        messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_SCROLL_DIRECTION)
         currentScrollDirectionHorizontal = !currentScrollDirectionHorizontal
         return currentScrollDirectionHorizontal
     }
@@ -260,10 +241,9 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
             controlPanel.searchTextField.grabFocus()
         }
         val searchTarget = controlPanel.searchTextField.text ?: return
-        eventSender.triggerWith(
+        messagePassingInterface.triggerEvent(
             TriggerableEventType.FIND_NEXT,
-            SearchDataObject(searchTarget),
-            SearchDataObject.serializer()
+            SearchDataObject(searchTarget)
         )
     }
 
@@ -272,10 +252,9 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
             controlPanel.searchTextField.grabFocus()
         }
         val searchTarget = controlPanel.searchTextField.text ?: return
-        eventSender.triggerWith(
+        messagePassingInterface.triggerEvent(
             TriggerableEventType.FIND_PREVIOUS,
-            SearchDataObject(searchTarget),
-            SearchDataObject.serializer()
+            SearchDataObject(searchTarget)
         )
     }
 
@@ -314,7 +293,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                 if (browser == null || browser.url != targetUrl) {
                     return
                 }
-                eventReceiver.injectSubscriptions()
+                messagePassingInterface.eventReceiver.injectSubscriptions()
                 updatePageNumber(currentPageNumber)
                 setThemeColors()
             }
@@ -333,7 +312,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         background: Color = UIUtil.getPanelBackground(),
         foreground: Color = UIUtil.getLabelForeground()
     ) {
-        eventSender.triggerWith(
+        messagePassingInterface.triggerEvent(
             TriggerableEventType.SET_THEME_COLORS,
             PdfViewerSettings.instance.run {
                 if (useCustomColors) {
@@ -350,8 +329,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                         PdfViewerSettings.defaultIconColor
                     )
                 }
-            },
-            SetThemeColorsDataObject.serializer()
+            }
         )
     }
 

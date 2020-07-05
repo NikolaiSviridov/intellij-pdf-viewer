@@ -1,9 +1,6 @@
 package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef
 
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.MessageEventReceiver
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.MessageEventSender
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.SubscribableEventType
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.TriggerableEventType
+import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.*
 import java.awt.MouseInfo
 import java.awt.Robot
 import java.awt.event.InputEvent
@@ -18,8 +15,7 @@ typealias PresentationModeListenerType = (PresentationModeController) -> Boolean
 class PresentationModeController(
     private val panel: PdfFileEditorJcefPanel,
     private val browserComponent: JComponent,
-    private val eventReceiver: MessageEventReceiver,
-    private val eventSender: MessageEventSender
+    private val messagePassingInterface: MessagePassingInterface
 ) {
     private val enterListeners = mutableListOf<PresentationModeListenerType>()
     private val exitListeners = mutableListOf<PresentationModeListenerType>()
@@ -40,18 +36,18 @@ class PresentationModeController(
     }
 
     init {
-        eventReceiver.run {
-            addHandler(SubscribableEventType.PRESENTATION_MODE_ENTER_READY) {
+        messagePassingInterface.run {
+            subscribe(SubscribableEventType.PRESENTATION_MODE_ENTER_READY) {
                 SwingUtilities.invokeLater {
                     clickInBrowserWindow()
                 }
             }
-            addHandler(SubscribableEventType.PRESENTATION_MODE_ENTER) {
+            subscribe(SubscribableEventType.PRESENTATION_MODE_ENTER) {
                 presentationModeActive = true
                 panel.addKeyListener(escapeKeyListener)
                 invokeListeners(enterListeners)
             }
-            addHandler(SubscribableEventType.PRESENTATION_MODE_EXIT) {
+            subscribe(SubscribableEventType.PRESENTATION_MODE_EXIT) {
                 presentationModeActive = false
                 invokeListeners(exitListeners)
             }
@@ -91,14 +87,14 @@ class PresentationModeController(
             return
         }
         panel.removeKeyListener(escapeKeyListener)
-        eventSender.trigger(TriggerableEventType.TOGGLE_PRESENTATION_MODE)
+        messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_PRESENTATION_MODE)
     }
 
     fun enter() {
         if (presentationModeActive) {
             return
         }
-        eventSender.trigger(TriggerableEventType.TOGGLE_PRESENTATION_MODE)
+        messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_PRESENTATION_MODE)
     }
 
     fun togglePresentationMode() {

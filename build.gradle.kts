@@ -44,6 +44,7 @@ val webviewSourceDirectory = file("${projectDir}/src/main/web-view")
 tasks {
     compileKotlin {
         kotlinOptions.jvmTarget = "1.8"
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ImplicitReflectionSerializer"
     }
     compileTestKotlin {
         kotlinOptions.jvmTarget = "1.8"
