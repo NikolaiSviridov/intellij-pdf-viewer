@@ -1,9 +1,9 @@
-package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.objects
+package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.messages
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DocumentInfoDataObject(
+data class DocumentInfoMessage(
     val fileName: String = "",
     val author: String = "",
     val creationDate: String = "",

@@ -1,4 +1,4 @@
-package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events
+package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.mpi
 
 enum class SubscribableEvent(val actualName: String) {
     PAGE_CHANGED("pageChanged"),

@@ -1,4 +1,4 @@
-package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.objects
+package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.messages
 
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.SidebarViewMode
 import kotlinx.serialization.Serializable
@@ -18,4 +18,4 @@ data class SidebarAvailableViewModes(
     }
 }
 
-typealias SidebarAvailableViewModesChangedDataObject = SidebarAvailableViewModes;
+typealias SidebarAvailableViewModesChangeMessage = SidebarAvailableViewModes;

@@ -1,4 +1,4 @@
-package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events
+package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.mpi
 
 enum class TriggerableEvent(val actualName: String) {
     INCREASE_SCALE("increaseScale"),

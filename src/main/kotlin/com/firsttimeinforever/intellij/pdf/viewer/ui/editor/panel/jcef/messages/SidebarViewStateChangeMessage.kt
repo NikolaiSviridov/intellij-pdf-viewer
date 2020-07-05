@@ -1,11 +1,11 @@
-package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.objects
+package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.messages
 
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.SidebarViewMode
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.SidebarViewState
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SidebarViewStateChangeDataObject(
+data class SidebarViewStateChangeMessage(
     val mode: String,
     val hidden: Boolean
 ) {
@@ -14,7 +14,7 @@ data class SidebarViewStateChangeDataObject(
 
     companion object {
         fun from(state: SidebarViewState) =
-            SidebarViewStateChangeDataObject(
+            SidebarViewStateChangeMessage(
                 state.mode.displayName,
                 state.hidden
             )

@@ -3,8 +3,8 @@ package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef
 import com.firsttimeinforever.intellij.pdf.viewer.settings.PdfViewerSettings
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.StaticServer
 import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.PdfFileEditorPanel
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.*
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.objects.*
+import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.mpi.*
+import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.messages.*
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
@@ -113,11 +113,11 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         add(controlPanel)
         add(browserPanel.component)
         messagePassingInterface.run {
-            subscribe<PageChangeDataObject>(SubscribableEvent.PAGE_CHANGED) {
+            subscribe<PageChangeMessage>(SubscribableEvent.PAGE_CHANGED) {
                 currentPageNumberHolder = it.pageNumber
                 pageStateChanged()
             }
-            subscribe<DocumentInfoDataObject>(SubscribableEvent.DOCUMENT_INFO) {
+            subscribe<DocumentInfoMessage>(SubscribableEvent.DOCUMENT_INFO) {
                 ApplicationManager.getApplication().invokeLater {
                     showDocumentInfoDialog(it)
                 }
@@ -125,7 +125,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
             subscribe(SubscribableEvent.FRAME_FOCUSED) {
                 grabFocus()
             }
-            subscribe<PagesCountDataObject>(SubscribableEvent.PAGES_COUNT) {
+            subscribe<PagesCountMessage>(SubscribableEvent.PAGES_COUNT) {
                 try {
                     pagesCountHolder = it.count
                     pageStateChanged()
@@ -147,10 +147,10 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                     showDocumentLoadErrorNotification()
                 }
             }
-            subscribe<SidebarViewStateChangeDataObject>(SubscribableEvent.SIDEBAR_VIEW_STATE_CHANGED) {
+            subscribe<SidebarViewStateChangeMessage>(SubscribableEvent.SIDEBAR_VIEW_STATE_CHANGED) {
                 sidebarViewStateHolder = it.state
             }
-            subscribe<SidebarAvailableViewModesChangedDataObject>(SubscribableEvent.SIDEBAR_AVAILABLE_VIEWS_CHANGED) {
+            subscribe<SidebarAvailableViewModesChangeMessage>(SubscribableEvent.SIDEBAR_AVAILABLE_VIEWS_CHANGED) {
                 sidebarAvailableViewModesHolder = it
             }
         }
@@ -185,7 +185,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         sidebarViewStateHolder = SidebarViewState(mode, sidebarViewStateHolder.hidden)
         messagePassingInterface.triggerEvent(
             TriggerableEvent.SET_SIDEBAR_VIEW_MODE,
-            SidebarViewModeChangeDataObject.from(mode)
+            SidebarViewModeChangeMessage.from(mode)
         )
     }
 
@@ -199,7 +199,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
     private fun updatePageNumber(value: Int) {
         messagePassingInterface.triggerEvent(
             TriggerableEvent.SET_PAGE,
-            PageChangeDataObject(value)
+            PageChangeMessage(value)
         )
     }
 
@@ -243,7 +243,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         val searchTarget = controlPanel.searchTextField.text ?: return
         messagePassingInterface.triggerEvent(
             TriggerableEvent.FIND_NEXT,
-            SearchDataObject(searchTarget)
+            SearchMessage(searchTarget)
         )
     }
 
@@ -254,7 +254,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         val searchTarget = controlPanel.searchTextField.text ?: return
         messagePassingInterface.triggerEvent(
             TriggerableEvent.FIND_PREVIOUS,
-            SearchDataObject(searchTarget)
+            SearchMessage(searchTarget)
         )
     }
 
@@ -275,7 +275,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         }
     }
 
-    private fun showDocumentInfoDialog(documentInfo: DocumentInfoDataObject) =
+    private fun showDocumentInfoDialog(documentInfo: DocumentInfoMessage) =
         DialogBuilder().centerPanel(DocumentInfoPanel(documentInfo)).showModal(true)
 
     private fun openDocument() {
@@ -316,14 +316,14 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
             TriggerableEvent.SET_THEME_COLORS,
             PdfViewerSettings.instance.run {
                 if (useCustomColors) {
-                    SetThemeColorsDataObject.from(
+                    SetThemeColorsMessage.from(
                         Color(customBackgroundColor),
                         Color(customForegroundColor),
                         Color(customIconColor)
                     )
                 }
                 else {
-                    SetThemeColorsDataObject.from(
+                    SetThemeColorsMessage.from(
                         background,
                         foreground,
                         PdfViewerSettings.defaultIconColor

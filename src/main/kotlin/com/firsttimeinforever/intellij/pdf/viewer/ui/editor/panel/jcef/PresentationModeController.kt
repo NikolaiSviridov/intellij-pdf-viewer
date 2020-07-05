@@ -1,6 +1,6 @@
 package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef
 
-import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events.*
+import com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.mpi.*
 import java.awt.MouseInfo
 import java.awt.Robot
 import java.awt.event.InputEvent

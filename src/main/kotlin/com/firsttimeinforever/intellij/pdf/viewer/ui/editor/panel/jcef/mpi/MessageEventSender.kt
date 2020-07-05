@@ -1,4 +1,4 @@
-package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events
+package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.mpi
 
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.ui.jcef.JBCefBrowser
