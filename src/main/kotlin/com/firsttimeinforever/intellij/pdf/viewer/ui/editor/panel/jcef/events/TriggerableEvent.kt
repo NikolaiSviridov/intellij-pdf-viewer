@@ -1,6 +1,6 @@
 package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events
 
-enum class TriggerableEventType(val displayName: String) {
+enum class TriggerableEvent(val actualName: String) {
     INCREASE_SCALE("increaseScale"),
     DECREASE_SCALE("decreaseScale"),
     GOTO_NEXT_PAGE("nextPage"),

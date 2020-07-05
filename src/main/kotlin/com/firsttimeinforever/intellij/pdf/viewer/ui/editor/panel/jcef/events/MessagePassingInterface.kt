@@ -12,21 +12,21 @@ import kotlinx.serialization.serializer
 class MessagePassingInterface(browser: JBCefBrowser): Disposable {
     val eventSender = MessageEventSender(browser, jsonSerializer)
     val eventReceiver =
-        MessageEventReceiver.fromList(browser, SubscribableEventType.values().asList())
+        MessageEventReceiver.fromList(browser, SubscribableEvent.values().asList())
 
     init {
         Disposer.register(this, eventReceiver)
     }
 
     @ImplicitReflectionSerializer
-    inline fun <reified MessageType: Any> triggerEvent(event: TriggerableEventType, message: MessageType) {
+    inline fun <reified MessageType: Any> triggerEvent(event: TriggerableEvent, message: MessageType) {
         eventSender.triggerWith(event, message, MessageType::class.serializer())
     }
 
-    fun triggerEvent(event: TriggerableEventType) = eventSender.trigger(event)
+    fun triggerEvent(event: TriggerableEvent) = eventSender.trigger(event)
 
     @ImplicitReflectionSerializer
-    inline fun <reified MessageType: Any> subscribe(event: SubscribableEventType, crossinline listener: (MessageType) -> Unit) {
+    inline fun <reified MessageType: Any> subscribe(event: SubscribableEvent, crossinline listener: (MessageType) -> Unit) {
         eventReceiver.addHandler(event) {
             try {
                 val result = jsonSerializer.parse(MessageType::class.serializer(), it)
@@ -38,11 +38,11 @@ class MessagePassingInterface(browser: JBCefBrowser): Disposable {
         }
     }
 
-    fun subscribe(event: SubscribableEventType, listener: () -> Unit) {
+    fun subscribe(event: SubscribableEvent, listener: () -> Unit) {
         eventReceiver.addHandler(event) { listener() }
     }
 
-    fun subscribePlain(event: SubscribableEventType, listener: (String) -> Unit) {
+    fun subscribePlain(event: SubscribableEvent, listener: (String) -> Unit) {
         eventReceiver.addHandler(event, listener)
     }
 

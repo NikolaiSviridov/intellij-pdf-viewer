@@ -37,17 +37,17 @@ class PresentationModeController(
 
     init {
         messagePassingInterface.run {
-            subscribe(SubscribableEventType.PRESENTATION_MODE_ENTER_READY) {
+            subscribe(SubscribableEvent.PRESENTATION_MODE_ENTER_READY) {
                 SwingUtilities.invokeLater {
                     clickInBrowserWindow()
                 }
             }
-            subscribe(SubscribableEventType.PRESENTATION_MODE_ENTER) {
+            subscribe(SubscribableEvent.PRESENTATION_MODE_ENTER) {
                 presentationModeActive = true
                 panel.addKeyListener(escapeKeyListener)
                 invokeListeners(enterListeners)
             }
-            subscribe(SubscribableEventType.PRESENTATION_MODE_EXIT) {
+            subscribe(SubscribableEvent.PRESENTATION_MODE_EXIT) {
                 presentationModeActive = false
                 invokeListeners(exitListeners)
             }
@@ -87,14 +87,14 @@ class PresentationModeController(
             return
         }
         panel.removeKeyListener(escapeKeyListener)
-        messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_PRESENTATION_MODE)
+        messagePassingInterface.triggerEvent(TriggerableEvent.TOGGLE_PRESENTATION_MODE)
     }
 
     fun enter() {
         if (presentationModeActive) {
             return
         }
-        messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_PRESENTATION_MODE)
+        messagePassingInterface.triggerEvent(TriggerableEvent.TOGGLE_PRESENTATION_MODE)
     }
 
     fun togglePresentationMode() {

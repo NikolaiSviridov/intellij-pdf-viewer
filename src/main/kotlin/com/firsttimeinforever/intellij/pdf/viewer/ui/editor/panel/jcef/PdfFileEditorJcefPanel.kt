@@ -113,19 +113,19 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         add(controlPanel)
         add(browserPanel.component)
         messagePassingInterface.run {
-            subscribe<PageChangeDataObject>(SubscribableEventType.PAGE_CHANGED) {
+            subscribe<PageChangeDataObject>(SubscribableEvent.PAGE_CHANGED) {
                 currentPageNumberHolder = it.pageNumber
                 pageStateChanged()
             }
-            subscribe<DocumentInfoDataObject>(SubscribableEventType.DOCUMENT_INFO) {
+            subscribe<DocumentInfoDataObject>(SubscribableEvent.DOCUMENT_INFO) {
                 ApplicationManager.getApplication().invokeLater {
                     showDocumentInfoDialog(it)
                 }
             }
-            subscribe(SubscribableEventType.FRAME_FOCUSED) {
+            subscribe(SubscribableEvent.FRAME_FOCUSED) {
                 grabFocus()
             }
-            subscribe<PagesCountDataObject>(SubscribableEventType.PAGES_COUNT) {
+            subscribe<PagesCountDataObject>(SubscribableEvent.PAGES_COUNT) {
                 try {
                     pagesCountHolder = it.count
                     pageStateChanged()
@@ -137,7 +137,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                     )
                 }
             }
-            subscribePlain(SubscribableEventType.DOCUMENT_LOAD_ERROR) {
+            subscribePlain(SubscribableEvent.DOCUMENT_LOAD_ERROR) {
                 // For some reason this event triggers with no data
                 // This should be impossible, due to passing event data
                 // to triggerEvent() in unhandledrejection event handler
@@ -147,10 +147,10 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
                     showDocumentLoadErrorNotification()
                 }
             }
-            subscribe<SidebarViewStateChangeDataObject>(SubscribableEventType.SIDEBAR_VIEW_STATE_CHANGED) {
+            subscribe<SidebarViewStateChangeDataObject>(SubscribableEvent.SIDEBAR_VIEW_STATE_CHANGED) {
                 sidebarViewStateHolder = it.state
             }
-            subscribe<SidebarAvailableViewModesChangedDataObject>(SubscribableEventType.SIDEBAR_AVAILABLE_VIEWS_CHANGED) {
+            subscribe<SidebarAvailableViewModesChangedDataObject>(SubscribableEvent.SIDEBAR_AVAILABLE_VIEWS_CHANGED) {
                 sidebarAvailableViewModesHolder = it
             }
         }
@@ -184,7 +184,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
     fun setSidebarViewMode(mode: SidebarViewMode) {
         sidebarViewStateHolder = SidebarViewState(mode, sidebarViewStateHolder.hidden)
         messagePassingInterface.triggerEvent(
-            TriggerableEventType.SET_SIDEBAR_VIEW_MODE,
+            TriggerableEvent.SET_SIDEBAR_VIEW_MODE,
             SidebarViewModeChangeDataObject.from(mode)
         )
     }
@@ -198,21 +198,21 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
 
     private fun updatePageNumber(value: Int) {
         messagePassingInterface.triggerEvent(
-            TriggerableEventType.SET_PAGE,
+            TriggerableEvent.SET_PAGE,
             PageChangeDataObject(value)
         )
     }
 
-    override fun increaseScale() = messagePassingInterface.triggerEvent(TriggerableEventType.INCREASE_SCALE)
-    override fun decreaseScale() = messagePassingInterface.triggerEvent(TriggerableEventType.DECREASE_SCALE)
-    override fun nextPage() = messagePassingInterface.triggerEvent(TriggerableEventType.GOTO_NEXT_PAGE)
-    override fun previousPage() = messagePassingInterface.triggerEvent(TriggerableEventType.GOTO_PREVIOUS_PAGE)
+    override fun increaseScale() = messagePassingInterface.triggerEvent(TriggerableEvent.INCREASE_SCALE)
+    override fun decreaseScale() = messagePassingInterface.triggerEvent(TriggerableEvent.DECREASE_SCALE)
+    override fun nextPage() = messagePassingInterface.triggerEvent(TriggerableEvent.GOTO_NEXT_PAGE)
+    override fun previousPage() = messagePassingInterface.triggerEvent(TriggerableEvent.GOTO_PREVIOUS_PAGE)
 
-    fun getDocumentInfo() = messagePassingInterface.triggerEvent(TriggerableEventType.GET_DOCUMENT_INFO)
-    fun toggleSidebar() = messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_SIDEBAR)
-    fun printDocument() = messagePassingInterface.triggerEvent(TriggerableEventType.PRINT_DOCUMENT)
-    fun rotateClockwise() = messagePassingInterface.triggerEvent(TriggerableEventType.ROTATE_CLOCKWISE)
-    fun rotateCounterclockwise() = messagePassingInterface.triggerEvent(TriggerableEventType.ROTATE_COUNTERCLOCKWISE)
+    fun getDocumentInfo() = messagePassingInterface.triggerEvent(TriggerableEvent.GET_DOCUMENT_INFO)
+    fun toggleSidebar() = messagePassingInterface.triggerEvent(TriggerableEvent.TOGGLE_SIDEBAR)
+    fun printDocument() = messagePassingInterface.triggerEvent(TriggerableEvent.PRINT_DOCUMENT)
+    fun rotateClockwise() = messagePassingInterface.triggerEvent(TriggerableEvent.ROTATE_CLOCKWISE)
+    fun rotateCounterclockwise() = messagePassingInterface.triggerEvent(TriggerableEvent.ROTATE_COUNTERCLOCKWISE)
 
     var pageSpreadState
         get() = pageSpreadStateHolder
@@ -222,14 +222,14 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
             }
             pageSpreadStateHolder = state
             messagePassingInterface.triggerEvent(when (state) {
-                PageSpreadState.NONE -> TriggerableEventType.SPREAD_NONE
-                PageSpreadState.EVEN -> TriggerableEventType.SPREAD_EVEN_PAGES
-                PageSpreadState.ODD -> TriggerableEventType.SPREAD_ODD_PAGES
+                PageSpreadState.NONE -> TriggerableEvent.SPREAD_NONE
+                PageSpreadState.EVEN -> TriggerableEvent.SPREAD_EVEN_PAGES
+                PageSpreadState.ODD -> TriggerableEvent.SPREAD_ODD_PAGES
             })
         }
 
     fun toggleScrollDirection(): Boolean {
-        messagePassingInterface.triggerEvent(TriggerableEventType.TOGGLE_SCROLL_DIRECTION)
+        messagePassingInterface.triggerEvent(TriggerableEvent.TOGGLE_SCROLL_DIRECTION)
         currentScrollDirectionHorizontal = !currentScrollDirectionHorizontal
         return currentScrollDirectionHorizontal
     }
@@ -242,7 +242,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         }
         val searchTarget = controlPanel.searchTextField.text ?: return
         messagePassingInterface.triggerEvent(
-            TriggerableEventType.FIND_NEXT,
+            TriggerableEvent.FIND_NEXT,
             SearchDataObject(searchTarget)
         )
     }
@@ -253,7 +253,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         }
         val searchTarget = controlPanel.searchTextField.text ?: return
         messagePassingInterface.triggerEvent(
-            TriggerableEventType.FIND_PREVIOUS,
+            TriggerableEvent.FIND_PREVIOUS,
             SearchDataObject(searchTarget)
         )
     }
@@ -313,7 +313,7 @@ class PdfFileEditorJcefPanel(virtualFile: VirtualFile):
         foreground: Color = UIUtil.getLabelForeground()
     ) {
         messagePassingInterface.triggerEvent(
-            TriggerableEventType.SET_THEME_COLORS,
+            TriggerableEvent.SET_THEME_COLORS,
             PdfViewerSettings.instance.run {
                 if (useCustomColors) {
                     SetThemeColorsDataObject.from(

@@ -1,6 +1,6 @@
 package com.firsttimeinforever.intellij.pdf.viewer.ui.editor.panel.jcef.events
 
-enum class SubscribableEventType(val displayName: String) {
+enum class SubscribableEvent(val actualName: String) {
     PAGE_CHANGED("pageChanged"),
     DOCUMENT_INFO("documentInfo"),
     PRESENTATION_MODE_ENTER_READY("presentationModeEnterReady"),

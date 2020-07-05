@@ -12,12 +12,12 @@ class MessageEventSender(private val browser: JBCefBrowser, private val jsonSeri
 
     private val logger = logger<MessageEventSender>()
 
-    fun trigger(event: TriggerableEventType, data: String = "{}") {
+    fun trigger(event: TriggerableEvent, data: String = "{}") {
         logger.debug("Triggering event: $event")
-        browser.cefBrowser.executeJavaScript("$TRIGGER_FUNCTION('${event.displayName}', $data)", null, 0)
+        browser.cefBrowser.executeJavaScript("$TRIGGER_FUNCTION('${event.actualName}', $data)", null, 0)
     }
 
-    fun <DataType> triggerWith(event: TriggerableEventType, data: DataType, strategy: SerializationStrategy<DataType>) {
+    fun <DataType> triggerWith(event: TriggerableEvent, data: DataType, strategy: SerializationStrategy<DataType>) {
         val targetData = jsonSerializer.toJson(strategy, data).toString()
         logger.debug("Triggering event: $event with payload: $targetData")
         trigger(event, targetData)
