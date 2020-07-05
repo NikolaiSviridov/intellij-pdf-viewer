@@ -10,13 +10,8 @@ enum class SidebarViewMode(val displayName: String) {
 
     companion object {
         fun from(value: String): SidebarViewMode {
-            return when (value) {
-                "thumbs" -> THUMBNAILS
-                "bookmarks" -> BOOKMARKS
-                "attachments" -> ATTACHMENTS
-                "none" -> throw IllegalArgumentException("Hidden mode should not be used here!")
-                else -> throw IllegalArgumentException("Could not construct SidebarViewState!")
-            }
+            return values().firstOrNull { it.displayName == value }
+                ?: throw IllegalArgumentException("Could not construct SidebarViewState!")
         }
     }
 }
